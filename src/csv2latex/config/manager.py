@@ -74,6 +74,11 @@ class ConfigManager:
         """Get per-column underline settings"""
         return self._config.get('column_underline', {})
     
+    @property
+    def table_style(self):
+        """Get table style configuration"""
+        return self._config.get('table_style', 'hline')
+    
     def get_model_order(self, model_name):
         """Get order value for model, with high default for unspecified models"""
         return self.model_order.get(str(model_name), 999999)

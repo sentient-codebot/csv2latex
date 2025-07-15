@@ -112,3 +112,6 @@ model_patterns:
 
 # Global formatting options
 underline_min_values: true
+
+# Table style configuration
+table_style: "booktabs"  # Options: "hline" (default) or "booktabs"

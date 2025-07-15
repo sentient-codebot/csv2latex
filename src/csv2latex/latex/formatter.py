@@ -66,7 +66,13 @@ class LatexFormatter:
         
         latex = "\\begin{table}[t]\n\\centering\n"
         latex += "\\caption{Your Caption Here}\n"
-        latex += f"\\begin{{tabular}}{{{col_spec}}}\n\\hline\n"
+        latex += f"\\begin{{tabular}}{{{col_spec}}}\n"
+        
+        # Add top rule based on table style
+        if self.config.table_style == 'booktabs':
+            latex += "\\toprule\n"
+        else:  # default to 'hline'
+            latex += "\\hline\n"
         
         return latex
     
@@ -81,7 +87,12 @@ class LatexFormatter:
                 headers.insert(position, extra_col['display_name'])
         
         headers_str = " & ".join([f"\\textbf{{{header}}}" for header in headers])
-        return f"{headers_str} \\\\\n\\hline\n"
+        
+        # Add middle rule based on table style
+        if self.config.table_style == 'booktabs':
+            return f"{headers_str} \\\\\n\\midrule\n"
+        else:  # default to 'hline'
+            return f"{headers_str} \\\\\n\\hline\n"
     
     def _build_table_rows(self, df, cols, min_values, decimal_places, column_underline_override):
         """Build table data rows with extra columns and formatting"""
@@ -184,4 +195,7 @@ class LatexFormatter:
     
     def _build_table_footer(self):
         """Build LaTeX table footer"""
-        return "\\hline\n\\end{tabular}\n\\end{table}"
+        if self.config.table_style == 'booktabs':
+            return "\\bottomrule\n\\end{tabular}\n\\end{table}"
+        else:  # default to 'hline'
+            return "\\hline\n\\end{tabular}\n\\end{table}"

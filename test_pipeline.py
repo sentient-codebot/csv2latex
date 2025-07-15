@@ -146,17 +146,54 @@ def test_complete_pipeline():
     )
     
     print("✅ LaTeX table generated successfully")
+    print(f"   Table style: {config.table_style}")
     print("   Sample output (first data row):")
     
     # Extract and display first data row
     latex_lines = latex_output.split('\\n')
     for line in latex_lines:
-        if '&' in line and 'textbf' not in line and 'hline' not in line:
+        if '&' in line and 'textbf' not in line and 'hline' not in line and 'rule' not in line:
             print(f"     {line}")
             break
     
-    # Step 8: Test specific features in LaTeX output
-    print("\\n8. TESTING LATEX OUTPUT FEATURES")
+    # Step 8: Test table styles
+    print("\\n8. TESTING TABLE STYLES")
+    print("-" * 40)
+    
+    # Test both table styles
+    for style in ['hline', 'booktabs']:
+        print(f"   Testing {style} style:")
+        
+        # Temporarily change config
+        original_style = config._config.get('table_style', 'hline')
+        config._config['table_style'] = style
+        
+        # Generate LaTeX with this style
+        style_formatter = LatexFormatter(config)
+        style_output = style_formatter.generate_latex_table(
+            sorted_df.head(2), selected_columns, decimal_places=4
+        )
+        
+        if style == 'hline':
+            has_hline = '\\hline' in style_output
+            has_booktabs = '\\toprule' in style_output or '\\midrule' in style_output or '\\bottomrule' in style_output
+            print(f"     ✅ Uses \\hline: {has_hline}")
+            print(f"     ✅ No booktabs rules: {not has_booktabs}")
+        else:
+            has_toprule = '\\toprule' in style_output
+            has_midrule = '\\midrule' in style_output  
+            has_bottomrule = '\\bottomrule' in style_output
+            has_hline = '\\hline' in style_output
+            print(f"     ✅ Uses \\toprule: {has_toprule}")
+            print(f"     ✅ Uses \\midrule: {has_midrule}")
+            print(f"     ✅ Uses \\bottomrule: {has_bottomrule}")
+            print(f"     ✅ No \\hline: {not has_hline}")
+        
+        # Restore original style
+        config._config['table_style'] = original_style
+    
+    # Step 9: Test specific features in LaTeX output
+    print("\\n9. TESTING LATEX OUTPUT FEATURES")
     print("-" * 40)
     
     features_found = {
@@ -166,6 +203,7 @@ def test_complete_pipeline():
         "Pattern symbols": any(symbol in latex_output for symbol in ["\\dagger", "\\ddagger", "\\ast"]),
         "Extra columns": "\\checkmark" in latex_output,
         "Proper formatting": "$" in latex_output,
+        "Booktabs style": "\\toprule" in latex_output and "\\midrule" in latex_output and "\\bottomrule" in latex_output,
     }
     
     all_features_work = True
@@ -175,8 +213,8 @@ def test_complete_pipeline():
         if not found and feature != "Pattern symbols":  # Pattern symbols depend on data
             all_features_work = False
     
-    # Step 9: Test backward compatibility
-    print("\\n9. TESTING BACKWARD COMPATIBILITY")
+    # Step 10: Test backward compatibility
+    print("\\n10. TESTING BACKWARD COMPATIBILITY")
     print("-" * 40)
     
     # Test with legacy model configuration
@@ -214,6 +252,7 @@ def test_complete_pipeline():
         print("   • Value replacements for all columns")
         print("   • Pattern formatting and custom column formats")
         print("   • LaTeX generation with underlines and symbols")
+        print("   • Configurable table styles (hline vs booktabs)")
         print("   • Backward compatibility with legacy configurations")
         print("   • Extra columns and comprehensive formatting")
         return True

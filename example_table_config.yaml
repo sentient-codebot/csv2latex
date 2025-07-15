@@ -168,6 +168,11 @@ model_patterns:
 # Global formatting options (legacy - use column_underline for per-column control)
 underline_min_values: true    # Default setting for underlining minimum values
 
+# Table style configuration
+table_style: "booktabs"       # Options: "hline" (default) or "booktabs"
+                              # "hline" uses \hline throughout
+                              # "booktabs" uses \toprule, \midrule, \bottomrule (requires \usepackage{booktabs})
+
 # Format specification examples:
 # :.3f     -> 3 decimal places (0.123456 -> 0.123)
 # :.2e     -> Scientific notation with 2 decimals (0.00123 -> 1.23e-03)
