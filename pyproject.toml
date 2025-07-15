@@ -1,0 +1,18 @@
+[project]
+name = "csv2latex"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas>=2.3.1",
+    "pyqt6>=6.9.1",
+    "pytz>=2025.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+csv2latex = "csv2latex.app:cli"

@@ -8,7 +8,7 @@ This script provides a GUI application for converting CSV files to LaTeX tables 
 It includes functionalities for loading CSV files, setting filters, sorting data, and customizing column mappings.
 
 To use the application:
-run `python csv2latex.py` in the terminal.
+run `python main.py` in the terminal.
 """
 import sys
 import pandas as pd
