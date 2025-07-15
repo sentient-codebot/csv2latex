@@ -13,12 +13,6 @@ This is a PyQt6-based GUI application for converting CSV files to LaTeX tables. 
 python main.py
 ```
 
-**Install dependencies:**
-deprecated.
-```bash
-pip install -r requirements.txt
-```
-
 **Using uv (recommended):**
 ```bash
 uv sync
@@ -30,22 +24,36 @@ uv run python main.py
 csv2latex  # after installation
 ```
 
+**Install for development:**
+```bash
+uv sync  # installs dependencies from pyproject.toml
+```
+
 ## Code Architecture
 
-### Main Components
+### Modular Structure
+
+The application follows a modular architecture with clear separation of concerns:
 
 1. **Entry Points:**
    - `main.py` - Direct execution entry point
    - `src/csv2latex/app.py` - Contains `cli()` function for package entry point
 
 2. **Core Application:**
-   - `src/csv2latex/converters.py` - Main GUI application (`CSVToLatexConverter` class)
-   - `src/csv2latex/_converters.py` - Simplified version without YAML config support
+   - `src/csv2latex/main_window.py` - Main GUI window (`CSVToLatexConverter` class)
+   - `src/csv2latex/__converters.py` - Legacy monolithic implementation
 
-3. **Key Classes:**
-   - `CSVToLatexConverter` - Main window with full feature set including YAML configuration
-   - `FilterDialog` - Modal dialog for setting row filters (numeric ranges, categorical values)
-   - `SortDialog` - Modal dialog for configuring multi-column sorting with drag-and-drop reordering
+3. **Component Modules:**
+   - `src/csv2latex/config/manager.py` - Configuration management (`ConfigManager` class)
+   - `src/csv2latex/dialogs/` - UI dialog components (`FilterDialog`, `SortDialog`)
+   - `src/csv2latex/latex/formatter.py` - LaTeX generation (`LatexFormatter` class)
+   - `src/csv2latex/utils/data_processing.py` - Data operations (`DataProcessor` class)
+
+4. **Key Classes:**
+   - `CSVToLatexConverter` - Main window orchestrating all components
+   - `ConfigManager` - Loads and manages YAML configuration
+   - `DataProcessor` - Handles filtering, sorting, and data manipulation
+   - `LatexFormatter` - Generates LaTeX table output with formatting rules
 
 ### Configuration System
 
@@ -58,23 +66,34 @@ The application supports advanced configuration through `table_config.yaml`:
 - `ignored_models_in_calculation` - Models to exclude from min value calculations
 - `extra_columns` - Additional columns to insert at specific positions
 - `model_patterns` - Pattern-based formatting rules (e.g., suffixes)
+- `column_formats` - Display format specifications for each column (e.g., ":.3f", ":.2e", ":.1%")
+
+The `ConfigManager` class provides centralized access to all configuration options with fallback defaults when the YAML file is missing.
 
 ### Data Processing Flow
 
 1. **CSV Loading** - Multiple files can be loaded and concatenated
-2. **Model Filtering** - Ignored models are filtered out early
-3. **Model Sorting** - Custom model ordering is applied
-4. **User Filtering** - Interactive filters for numeric ranges and categorical values
-5. **User Sorting** - Multi-column sorting with custom order
-6. **Column Selection** - Interactive column inclusion/exclusion and renaming
-7. **LaTeX Generation** - Table generation with min value highlighting and custom formatting
+2. **Model Filtering** - Ignored models are filtered out early via `DataProcessor.filter_ignored_models()`
+3. **Model Sorting** - Custom model ordering is applied via `DataProcessor.sort_by_model_order()`
+4. **User Filtering** - Interactive filters for numeric ranges and categorical values via `DataProcessor.apply_filters()`
+5. **User Sorting** - Multi-column sorting with custom order via `DataProcessor.apply_sort()`
+6. **Column Selection** - Interactive column inclusion/exclusion and renaming in main window
+7. **LaTeX Generation** - Table generation with min value highlighting and custom formatting via `LatexFormatter.generate_latex_table()`
+
+### Component Interaction
+
+- **Main Window** (`CSVToLatexConverter`) orchestrates all components and manages UI state
+- **ConfigManager** is shared across components for consistent configuration access
+- **DataProcessor** provides pure static methods for data manipulation without state
+- **LatexFormatter** receives processed data and generates formatted LaTeX output
+- **Dialog components** (`FilterDialog`, `SortDialog`) handle specific user interactions
 
 ### GUI Layout
 
 - Top buttons: Load CSV, Set Filters, Set Sort Order, Convert to LaTeX
 - Column configuration table with Include/Original Name/Display Name columns
 - Move Up/Down buttons for column reordering
-- Data preview table
+- Data preview table (updates automatically with filters/sorting)
 - Decimal places input
 - LaTeX output text area (monospace font)
 
@@ -87,3 +106,4 @@ The application supports advanced configuration through `table_config.yaml`:
 - **LaTeX formatting** with minimum value highlighting and custom model name mapping
 - **Configuration-driven** behavior through YAML files
 - **Pattern matching** for model-specific formatting rules
+- **Modular architecture** with clear separation of concerns
