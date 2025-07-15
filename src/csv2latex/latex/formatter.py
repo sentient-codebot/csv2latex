@@ -7,7 +7,7 @@ class LatexFormatter:
     def __init__(self, config_manager):
         self.config = config_manager
     
-    def generate_latex_table(self, df, selected_columns, decimal_places=4, underline_min=None):
+    def generate_latex_table(self, df, selected_columns, decimal_places=4, column_underline_override=None):
         """Generate LaTeX table from dataframe and selected columns"""
         display_names = list(selected_columns.values())
         cols = list(selected_columns.keys())
@@ -15,23 +15,20 @@ class LatexFormatter:
         if not cols:
             return "Please select at least one column"
         
-        # Use provided underline setting or fall back to config
-        if underline_min is None:
-            underline_min = self.config.underline_min_values
-        
         # Find minimum values for each numeric column (except first column)
-        min_values = self._calculate_min_values(df, cols) if underline_min else {}
+        # Only calculate for columns that have underline enabled
+        min_values = self._calculate_min_values(df, cols, column_underline_override)
         
         # Start building LaTeX table
         latex = self._build_table_header(len(cols))
         latex += self._build_table_headers(display_names)
-        latex += self._build_table_rows(df, cols, min_values, decimal_places, underline_min)
+        latex += self._build_table_rows(df, cols, min_values, decimal_places, column_underline_override)
         latex += self._build_table_footer()
         
         return latex
     
-    def _calculate_min_values(self, df, cols):
-        """Calculate minimum values for numeric columns, excluding ignored models"""
+    def _calculate_min_values(self, df, cols, column_underline_override=None):
+        """Calculate minimum values for numeric columns that have underline enabled"""
         min_values = {}
         
         # Filter dataframe for minimum calculation
@@ -47,9 +44,18 @@ class LatexFormatter:
         
         for col in cols[1:]:  # Skip first column
             if df_for_mins[col].dtype in ['float64', 'int64']:
-                min_values[col] = df_for_mins[col].min()
+                # Check if this column should have underline
+                should_underline = self._should_underline_column(col, column_underline_override)
+                if should_underline:
+                    min_values[col] = df_for_mins[col].min()
         
         return min_values
+    
+    def _should_underline_column(self, col, column_underline_override=None):
+        """Check if a column should have its minimum values underlined"""
+        if column_underline_override is not None and col in column_underline_override:
+            return column_underline_override[col]
+        return self.config.get_column_underline(col)
     
     def _build_table_header(self, num_cols):
         """Build LaTeX table header with column specification"""
@@ -75,7 +81,7 @@ class LatexFormatter:
         headers_str = " & ".join([f"\\textbf{{{header}}}" for header in headers])
         return f"{headers_str} \\\\\n\\hline\n"
     
-    def _build_table_rows(self, df, cols, min_values, decimal_places, underline_min):
+    def _build_table_rows(self, df, cols, min_values, decimal_places, column_underline_override):
         """Build table data rows with extra columns and formatting"""
         latex_rows = ""
         
@@ -94,7 +100,7 @@ class LatexFormatter:
                     current_pos += 1
                 
                 # Add the actual column value
-                formatted_value = self._format_cell_value(value, col, current_model, min_values, decimal_places, i == 0, underline_min)
+                formatted_value = self._format_cell_value(value, col, current_model, min_values, decimal_places, i == 0, column_underline_override)
                 row_values.append(formatted_value)
                 current_pos += 1
             
@@ -107,9 +113,29 @@ class LatexFormatter:
         
         return latex_rows
     
-    def _format_cell_value(self, value, col, current_model, min_values, decimal_places, is_first_column, underline_min):
+    def _format_cell_value(self, value, col, current_model, min_values, decimal_places, is_first_column, column_underline_override):
         """Format individual cell value with appropriate LaTeX formatting"""
-        if is_first_column:  # First column (model names)
+        if is_first_column:  # First column - check if it has custom formatting
+            # If first column has a custom format, use it instead of treating as model name
+            column_format = self.config.get_column_format(col)
+            if column_format and isinstance(value, (int, float)):
+                try:
+                    # Handle integer formats by converting float to int
+                    if column_format in ['d', 'b', 'o', 'x', 'X'] or column_format.endswith('d'):
+                        formatted_value = f"{int(value):{column_format}}"
+                    else:
+                        formatted_value = f"{value:{column_format}}"
+                    
+                    # Apply underline if needed (first column can have min values too)
+                    should_underline = self._should_underline_column(col, column_underline_override)
+                    if should_underline and col in min_values and abs(value - min_values[col]) < 1e-10:
+                        formatted_value = f"\\underline{{{formatted_value}}}"
+                    
+                    return f"${formatted_value}$"
+                except (ValueError, TypeError):
+                    pass  # Fall back to model name logic
+            
+            # Default model name logic for first column
             return self.config.latex_model_names.get(str(value), str(value))
         elif isinstance(value, (int, float)):
             # Check if there's a custom format for this column
@@ -134,8 +160,9 @@ class LatexFormatter:
                     prefix = pattern_prefix
                     break
             
-            # Underline minimum values only if underline_min is enabled
-            if underline_min and col in min_values and abs(value - min_values[col]) < 1e-10:
+            # Check if this specific column should have underline
+            should_underline = self._should_underline_column(col, column_underline_override)
+            if should_underline and col in min_values and abs(value - min_values[col]) < 1e-10:
                 formatted_value = f"\\underline{{{formatted_value}}}"
             
             return f"${prefix}{formatted_value}$"

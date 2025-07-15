@@ -110,8 +110,8 @@ class CSVToLatexConverter(QMainWindow):
         
         # Column checkboxes and names
         self.column_widget = QTableWidget()
-        self.column_widget.setColumnCount(3)
-        self.column_widget.setHorizontalHeaderLabels(["Include", "Original Name", "Display Name"])
+        self.column_widget.setColumnCount(4)
+        self.column_widget.setHorizontalHeaderLabels(["Include", "Original Name", "Display Name", "Underline Min"])
         column_layout.addWidget(self.column_widget)
         
         # Reorder buttons
@@ -137,25 +137,10 @@ class CSVToLatexConverter(QMainWindow):
         self.decimal_places_input = QLineEdit("4")
         format_layout.addWidget(self.decimal_places_input)
         
-        format_layout.addWidget(QLabel("  "))  # Spacer
-        
-        # Underline minimum values checkbox
-        self.underline_checkbox = QCheckBox("Underline minimum values")
-        self.underline_checkbox.setChecked(self.config.underline_min_values)
-        self.underline_checkbox.stateChanged.connect(self._on_underline_changed)
-        format_layout.addWidget(self.underline_checkbox)
+        format_layout.addWidget(QLabel("  (Underline settings are per-column)"))  # Info text
         
         format_layout.addStretch()
         return format_layout
-    
-    def _on_underline_changed(self):
-        """Handle underline checkbox state change"""
-        # Update the LaTeX formatter when the setting changes
-        self.latex_formatter = LatexFormatter(self.config)
-        
-        # Regenerate LaTeX if we have data
-        if hasattr(self, 'combined_df'):
-            self._convert_to_latex()
     
     def _move_column_up(self):
         current_row = self.column_widget.currentRow()
@@ -184,12 +169,13 @@ class CSVToLatexConverter(QMainWindow):
         return {
             'checkbox': self.column_widget.cellWidget(row, 0).isChecked(),
             'original_name': self.column_widget.item(row, 1).text(),
-            'display_name': self.column_widget.cellWidget(row, 2).text()
+            'display_name': self.column_widget.cellWidget(row, 2).text(),
+            'underline': self.column_widget.cellWidget(row, 3).isChecked()
         }
     
     def _set_row_data(self, row, data):
         """Set all data for a row"""
-        # Set checkbox
+        # Set include checkbox
         checkbox = QCheckBox()
         checkbox.setChecked(data['checkbox'])
         checkbox.stateChanged.connect(self._update_preview)
@@ -204,6 +190,18 @@ class CSVToLatexConverter(QMainWindow):
         display_name = QLineEdit(data['display_name'])
         display_name.textChanged.connect(self._update_preview)
         self.column_widget.setCellWidget(row, 2, display_name)
+        
+        # Set underline checkbox
+        underline_checkbox = QCheckBox()
+        underline_checkbox.setChecked(data['underline'])
+        underline_checkbox.stateChanged.connect(self._on_column_underline_changed)
+        self.column_widget.setCellWidget(row, 3, underline_checkbox)
+    
+    def _on_column_underline_changed(self):
+        """Handle per-column underline checkbox changes"""
+        # Regenerate LaTeX if we have data
+        if hasattr(self, 'combined_df'):
+            self._convert_to_latex()
     
     def _load_csv_files(self):
         file_names, _ = QFileDialog.getOpenFileNames(
@@ -252,6 +250,12 @@ class CSVToLatexConverter(QMainWindow):
             display_name = QLineEdit(self.config.get_pretty_column_name(col))
             display_name.textChanged.connect(self._update_preview)
             self.column_widget.setCellWidget(i, 2, display_name)
+            
+            # Underline minimum values checkbox
+            underline_checkbox = QCheckBox()
+            underline_checkbox.setChecked(self.config.get_column_underline(col))
+            underline_checkbox.stateChanged.connect(self._on_column_underline_changed)
+            self.column_widget.setCellWidget(i, 3, underline_checkbox)
         
         self.column_widget.resizeColumnsToContents()
     
@@ -349,10 +353,20 @@ class CSVToLatexConverter(QMainWindow):
         # Get selected columns
         selected_columns = self._get_selected_columns()
         
-        # Generate LaTeX
-        underline_min = self.underline_checkbox.isChecked()
-        latex = self.latex_formatter.generate_latex_table(df, selected_columns, decimal_places, underline_min)
+        # Generate LaTeX with per-column underline settings
+        column_underline_settings = self._get_column_underline_settings()
+        latex = self.latex_formatter.generate_latex_table(df, selected_columns, decimal_places, column_underline_settings)
         self.latex_output.setPlainText(latex)
+    
+    def _get_column_underline_settings(self):
+        """Get dictionary of column underline settings from GUI"""
+        underline_settings = {}
+        for i in range(self.column_widget.rowCount()):
+            col = self.column_widget.item(i, 1).text()
+            underline_checkbox = self.column_widget.cellWidget(i, 3)
+            if underline_checkbox:
+                underline_settings[col] = underline_checkbox.isChecked()
+        return underline_settings
     
     def _load_config_file(self):
         """Load a new configuration file"""
@@ -370,9 +384,8 @@ class CSVToLatexConverter(QMainWindow):
             # Update the formatter with the new config
             self.latex_formatter = LatexFormatter(self.config)
             
-            # Update the UI label and checkbox
+            # Update the UI label
             self.config_file_label.setText(f"Current: {self.config.config_path}")
-            self.underline_checkbox.setChecked(self.config.underline_min_values)
             
             # If we have loaded data, update the column names and preview
             if hasattr(self, 'combined_df'):
@@ -380,9 +393,16 @@ class CSVToLatexConverter(QMainWindow):
                 self._update_preview()
     
     def _update_column_display_names(self):
-        """Update the display names in the column widget based on new config"""
+        """Update the display names and underline settings in the column widget based on new config"""
         for i in range(self.column_widget.rowCount()):
             original_name = self.column_widget.item(i, 1).text()
+            
+            # Update display name
             display_name_widget = self.column_widget.cellWidget(i, 2)
             if display_name_widget:
                 display_name_widget.setText(self.config.get_pretty_column_name(original_name))
+            
+            # Update underline checkbox
+            underline_widget = self.column_widget.cellWidget(i, 3)
+            if underline_widget:
+                underline_widget.setChecked(self.config.get_column_underline(original_name))

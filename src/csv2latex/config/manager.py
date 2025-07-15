@@ -66,8 +66,13 @@ class ConfigManager:
     
     @property
     def underline_min_values(self):
-        """Get whether to underline minimum values"""
+        """Get whether to underline minimum values (legacy global setting)"""
         return self._config.get('underline_min_values', True)
+    
+    @property
+    def column_underline(self):
+        """Get per-column underline settings"""
+        return self._config.get('column_underline', {})
     
     def get_model_order(self, model_name):
         """Get order value for model, with high default for unspecified models"""
@@ -90,3 +95,11 @@ class ConfigManager:
     def get_column_format(self, col_name):
         """Get format specification for a column"""
         return self.column_formats.get(col_name, None)
+    
+    def get_column_underline(self, col_name):
+        """Get underline setting for a specific column"""
+        # Check per-column setting first, then fall back to global setting
+        if col_name in self.column_underline:
+            return self.column_underline[col_name]
+        else:
+            return self.underline_min_values

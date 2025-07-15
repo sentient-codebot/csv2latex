@@ -70,8 +70,17 @@ model_patterns:
     "_fine_tuned": "\\dagger"
     "_ensemble": "\\ddagger"
 
-# Formatting options
-underline_min_values: true    # Enable/disable underlining minimum values in LaTeX output
+# Global formatting options (legacy - use column_underline for per-column control)
+underline_min_values: true    # Default setting for underlining minimum values
+
+# Per-column underline settings (NEW FEATURE)
+column_underline:
+  accuracy: true              # Underline minimum accuracy values
+  f1_score: true              # Underline minimum F1 score values
+  precision: false            # Don't underline minimum precision values
+  recall: false               # Don't underline minimum recall values
+  loss: true                  # Underline minimum loss values (usually best when lowest)
+  learning_rate: false        # Don't underline minimum learning rate values
 
 # Format specification examples:
 # :.3f     -> 3 decimal places (0.123456 -> 0.123)
