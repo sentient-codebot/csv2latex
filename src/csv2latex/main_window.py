@@ -52,8 +52,8 @@ class CSVToLatexConverter(QMainWindow):
         self.preview_table = QTableWidget()
         layout.addWidget(self.preview_table)
         
-        # Decimal places configuration
-        layout.addLayout(self._create_decimal_layout())
+        # Decimal places and formatting options
+        layout.addLayout(self._create_format_options_layout())
         
         # LaTeX output
         layout.addWidget(QLabel("LaTeX Output:"))
@@ -128,13 +128,34 @@ class CSVToLatexConverter(QMainWindow):
         column_layout.addLayout(reorder_layout)
         return column_layout
     
-    def _create_decimal_layout(self):
-        """Create the decimal places configuration layout"""
-        decimal_layout = QHBoxLayout()
-        decimal_layout.addWidget(QLabel("Decimal Places:"))
+    def _create_format_options_layout(self):
+        """Create the formatting options layout"""
+        format_layout = QHBoxLayout()
+        
+        # Decimal places
+        format_layout.addWidget(QLabel("Decimal Places:"))
         self.decimal_places_input = QLineEdit("4")
-        decimal_layout.addWidget(self.decimal_places_input)
-        return decimal_layout
+        format_layout.addWidget(self.decimal_places_input)
+        
+        format_layout.addWidget(QLabel("  "))  # Spacer
+        
+        # Underline minimum values checkbox
+        self.underline_checkbox = QCheckBox("Underline minimum values")
+        self.underline_checkbox.setChecked(self.config.underline_min_values)
+        self.underline_checkbox.stateChanged.connect(self._on_underline_changed)
+        format_layout.addWidget(self.underline_checkbox)
+        
+        format_layout.addStretch()
+        return format_layout
+    
+    def _on_underline_changed(self):
+        """Handle underline checkbox state change"""
+        # Update the LaTeX formatter when the setting changes
+        self.latex_formatter = LatexFormatter(self.config)
+        
+        # Regenerate LaTeX if we have data
+        if hasattr(self, 'combined_df'):
+            self._convert_to_latex()
     
     def _move_column_up(self):
         current_row = self.column_widget.currentRow()
@@ -329,7 +350,8 @@ class CSVToLatexConverter(QMainWindow):
         selected_columns = self._get_selected_columns()
         
         # Generate LaTeX
-        latex = self.latex_formatter.generate_latex_table(df, selected_columns, decimal_places)
+        underline_min = self.underline_checkbox.isChecked()
+        latex = self.latex_formatter.generate_latex_table(df, selected_columns, decimal_places, underline_min)
         self.latex_output.setPlainText(latex)
     
     def _load_config_file(self):
@@ -348,8 +370,9 @@ class CSVToLatexConverter(QMainWindow):
             # Update the formatter with the new config
             self.latex_formatter = LatexFormatter(self.config)
             
-            # Update the UI label
+            # Update the UI label and checkbox
             self.config_file_label.setText(f"Current: {self.config.config_path}")
+            self.underline_checkbox.setChecked(self.config.underline_min_values)
             
             # If we have loaded data, update the column names and preview
             if hasattr(self, 'combined_df'):

@@ -7,7 +7,7 @@ class LatexFormatter:
     def __init__(self, config_manager):
         self.config = config_manager
     
-    def generate_latex_table(self, df, selected_columns, decimal_places=4):
+    def generate_latex_table(self, df, selected_columns, decimal_places=4, underline_min=None):
         """Generate LaTeX table from dataframe and selected columns"""
         display_names = list(selected_columns.values())
         cols = list(selected_columns.keys())
@@ -15,13 +15,17 @@ class LatexFormatter:
         if not cols:
             return "Please select at least one column"
         
+        # Use provided underline setting or fall back to config
+        if underline_min is None:
+            underline_min = self.config.underline_min_values
+        
         # Find minimum values for each numeric column (except first column)
-        min_values = self._calculate_min_values(df, cols)
+        min_values = self._calculate_min_values(df, cols) if underline_min else {}
         
         # Start building LaTeX table
         latex = self._build_table_header(len(cols))
         latex += self._build_table_headers(display_names)
-        latex += self._build_table_rows(df, cols, min_values, decimal_places)
+        latex += self._build_table_rows(df, cols, min_values, decimal_places, underline_min)
         latex += self._build_table_footer()
         
         return latex
@@ -71,7 +75,7 @@ class LatexFormatter:
         headers_str = " & ".join([f"\\textbf{{{header}}}" for header in headers])
         return f"{headers_str} \\\\\n\\hline\n"
     
-    def _build_table_rows(self, df, cols, min_values, decimal_places):
+    def _build_table_rows(self, df, cols, min_values, decimal_places, underline_min):
         """Build table data rows with extra columns and formatting"""
         latex_rows = ""
         
@@ -90,7 +94,7 @@ class LatexFormatter:
                     current_pos += 1
                 
                 # Add the actual column value
-                formatted_value = self._format_cell_value(value, col, current_model, min_values, decimal_places, i == 0)
+                formatted_value = self._format_cell_value(value, col, current_model, min_values, decimal_places, i == 0, underline_min)
                 row_values.append(formatted_value)
                 current_pos += 1
             
@@ -103,7 +107,7 @@ class LatexFormatter:
         
         return latex_rows
     
-    def _format_cell_value(self, value, col, current_model, min_values, decimal_places, is_first_column):
+    def _format_cell_value(self, value, col, current_model, min_values, decimal_places, is_first_column, underline_min):
         """Format individual cell value with appropriate LaTeX formatting"""
         if is_first_column:  # First column (model names)
             return self.config.latex_model_names.get(str(value), str(value))
@@ -130,8 +134,8 @@ class LatexFormatter:
                     prefix = pattern_prefix
                     break
             
-            # Underline minimum values
-            if col in min_values and abs(value - min_values[col]) < 1e-10:
+            # Underline minimum values only if underline_min is enabled
+            if underline_min and col in min_values and abs(value - min_values[col]) < 1e-10:
                 formatted_value = f"\\underline{{{formatted_value}}}"
             
             return f"${prefix}{formatted_value}$"

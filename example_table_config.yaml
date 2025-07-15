@@ -70,6 +70,9 @@ model_patterns:
     "_fine_tuned": "\\dagger"
     "_ensemble": "\\ddagger"
 
+# Formatting options
+underline_min_values: true    # Enable/disable underlining minimum values in LaTeX output
+
 # Format specification examples:
 # :.3f     -> 3 decimal places (0.123456 -> 0.123)
 # :.2e     -> Scientific notation with 2 decimals (0.00123 -> 1.23e-03)

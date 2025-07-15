@@ -64,6 +64,11 @@ class ConfigManager:
         """Get column format specifications"""
         return self._config.get('column_formats', {})
     
+    @property
+    def underline_min_values(self):
+        """Get whether to underline minimum values"""
+        return self._config.get('underline_min_values', True)
+    
     def get_model_order(self, model_name):
         """Get order value for model, with high default for unspecified models"""
         return self.model_order.get(str(model_name), 999999)
