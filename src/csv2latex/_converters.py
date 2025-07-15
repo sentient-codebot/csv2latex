@@ -1,3 +1,4 @@
+
 # Author: sentient-codebot
 # Program Name: csv2latex Converter
 # Date: Nov 22 2024
@@ -10,10 +11,7 @@ To use the application:
 run `python main.py` in the terminal.
 """
 import sys
-import logging
 import pandas as pd
-import yaml  # Add at top with other imports
-import fnmatch  # Add at top with other imports
 from PyQt6.QtGui import QIntValidator, QDoubleValidator, QFont
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, 
                            QHBoxLayout, QWidget, QFileDialog, QTableWidget, 
@@ -21,8 +19,6 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
                            QCheckBox, QGridLayout, QScrollArea, QComboBox,
                            QListWidget, QListWidgetItem, QTextEdit)
 from PyQt6.QtCore import Qt
-
-logging.basicConfig(level=logging.INFO)
 
 class SortDialog(QDialog):
     def __init__(self, columns, parent=None):
@@ -323,16 +319,10 @@ class CSVToLatexConverter(QMainWindow):
         self.setWindowTitle("CSV to LaTeX Table Converter")
         self.setGeometry(100, 100, 1000, 800)
         
-        self.column_mappings = self._load_column_mappings()
-        self.latex_model_names = self._load_latex_model_names()
-        self.model_order = self._load_model_order()
-        self.ignored_models = self._load_ignored_models()
-        self.ignored_in_calculation = self._load_ignored_in_calculation()
+        self.column_mappings = {}
         self.active_filters = {}
         self.sort_keys = []
         self.df_columns = []  # Store original column order
-        self.extra_columns = self._load_extra_columns()
-        self.model_patterns = self._load_model_patterns()
         
         self._init_ui()
         
@@ -462,85 +452,15 @@ class CSVToLatexConverter(QMainWindow):
         self.column_widget.setCellWidget(row, 2, display_name)
     
     def _prettify_column_name(self, col_name):
-        """Convert column names using mapping file or fallback to default prettify"""
-        # First check if we have a direct mapping
-        if col_name in self.column_mappings:
-            return self.column_mappings[col_name]
-            
-        # Fallback to original prettify logic
+        """Convert column names like 'model_name' to 'Model Name'"""
+        # Remove prefixes like 'data_', 'model_', 'result_'
         for prefix in ['data_', 'model_', 'result_']:
             if col_name.startswith(prefix):
                 col_name = col_name[len(prefix):]
         
+        # Split by underscore and capitalize
         words = col_name.split('_')
         return ' '.join(word.capitalize() for word in words)
-    
-    def _load_column_mappings(self):
-        """Load column name mappings from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return data.get('display_names', {})
-        except FileNotFoundError:
-            return {}
-    
-    def _load_latex_model_names(self):
-        """Load LaTeX model name mappings from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return data.get('latex_model_names', {})
-        except FileNotFoundError:
-            return {}
-    
-    def _load_model_order(self):
-        """Load model order from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return data.get('model_order', {})
-        except FileNotFoundError:
-            return {}
-    
-    def _load_ignored_models(self):
-        """Load list of models to ignore from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return set(data.get('ignored_models', []))
-        except FileNotFoundError:
-            return set()
-        
-    def _load_ignored_in_calculation(self):
-        """Load list of models to ignore in calculation from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return set(data.get('ignored_models_in_calculation', []))
-        except FileNotFoundError:
-            return set()
-    
-    def _load_extra_columns(self):
-        """Load extra columns configuration from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return data.get('extra_columns', [])
-        except FileNotFoundError:
-            return []
-    
-    def _load_model_patterns(self):
-        """Load model pattern rules from YAML file"""
-        try:
-            with open('table_config.yaml', 'r') as f:
-                data = yaml.safe_load(f)
-                return data.get('model_patterns', {'suffixes': {}})
-        except FileNotFoundError:
-            return {'suffixes': {}}
-    
-    def _get_model_order(self, model_name):
-        """Get order value for model, with high default for unspecified models"""
-        return self.model_order.get(str(model_name), 999999)
     
     def _load_csv_files(self):
         file_names, _ = QFileDialog.getOpenFileNames(
@@ -556,17 +476,7 @@ class CSVToLatexConverter(QMainWindow):
         # Load all dataframes and concatenate
         dfs = [pd.read_csv(f) for f in file_names]
         self.combined_df = pd.concat(dfs, axis=0, ignore_index=True)
-        
-        # Filter out ignored models first
-        if 'model' in self.combined_df.columns:
-            self.combined_df = self.combined_df[~self.combined_df['model'].isin(self.ignored_models)]
-            logging.info(f"Filtered out ignored models: {self.ignored_models}")
-            
-            # Sort by model names using configured order
-            self.combined_df['_model_order'] = self.combined_df['model'].apply(self._get_model_order)
-            self.combined_df = self.combined_df.sort_values('_model_order').drop('_model_order', axis=1)
-        
-        self.df_columns = self.combined_df.columns.tolist()
+        self.df_columns = self.combined_df.columns.tolist()  # Store original column order
         
         # Update column selection table
         self.column_widget.setRowCount(len(self.df_columns))
@@ -696,11 +606,6 @@ class CSVToLatexConverter(QMainWindow):
         
         self.preview_table.resizeColumnsToContents()
     
-    def _matches_ignored_pattern(self, model_name):
-        """Check if model name matches any ignored pattern"""
-        return any(fnmatch.fnmatch(str(model_name), pattern) 
-                  for pattern in self.ignored_in_calculation)
-
     def _convert_to_latex(self):
         if not hasattr(self, 'combined_df'):
             return
@@ -723,74 +628,27 @@ class CSVToLatexConverter(QMainWindow):
             self.latex_output.setPlainText("Please select at least one column")
             return
         
-        # Find minimum values for each numeric column (except first column)
-        min_values = {}
-        df_for_mins = df[~df['model'].isin(self.ignored_models) & 
-                        ~df['model'].apply(self._matches_ignored_pattern)] if 'model' in df.columns else df
-        for col in cols[1:]:  # Skip first column
-            if df_for_mins[col].dtype in ['float64', 'int64']:
-                min_values[col] = df_for_mins[col].min()
-        
         # Start building LaTeX table
         latex = "\\begin{table}[t]\n\\centering\n"
         latex += "\\caption{Your Caption Here}\n"
         
-        # Create column specification with extra column
-        col_spec = "c" * (len(cols) + 1)  # +1 for Res column
+        # Create column specification
+        col_spec = "c" * len(cols)
         latex += f"\\begin{{tabular}}{{{col_spec}}}\n\\hline\n"
         
-        # Add headers with extra columns
-        headers = display_names.copy()
-        # Insert extra column headers at specified positions
-        for extra_col in self.extra_columns:
-            position = extra_col['position']
-            if position < len(headers):
-                headers.insert(position, extra_col['display_name'])
-        
-        headers = " & ".join([f"\\textbf{{{header}}}" for header in headers])
+        # Add headers
+        headers = " & ".join([f"\\textbf{{{header}}}" for header in display_names])
         latex += f"{headers} \\\\\n\\hline\n"
         
-        # Add data rows with extra columns
+        # Add data rows
         for _, row in df[cols].iterrows():
             row_values = []
-            current_pos = 0
-            current_model = str(row[cols[0]])  # Get current model name
-            
-            for i, value in enumerate(row):
-                col = cols[i]
-                
-                # Add any extra columns that should appear before this position
-                while any(ec['position'] == current_pos for ec in self.extra_columns):
-                    extra_col = next(ec for ec in self.extra_columns if ec['position'] == current_pos)
-                    row_values.append(extra_col['value'])
-                    current_pos += 1
-                
-                # Add the actual column value
-                if i == 0:  # First column (model names)
-                    formatted_value = self.latex_model_names.get(str(value), str(value))
-                elif isinstance(value, float):
+            for value in row:
+                if isinstance(value, float):
                     formatted_value = f"{value:.{decimal_places}f}"
-                    
-                    # Check if current model name matches any patterns
-                    prefix = ""
-                    for suffix, pattern_prefix in self.model_patterns['suffixes'].items():
-                        if current_model.endswith(suffix):
-                            prefix = pattern_prefix
-                            break
-                    
-                    if col in min_values and abs(value - min_values[col]) < 1e-10:
-                        formatted_value = f"\\underline{{{formatted_value}}}"
-                    formatted_value = f"${prefix}{formatted_value}$"
                 else:
                     formatted_value = str(value)
                 row_values.append(formatted_value)
-                current_pos += 1
-            
-            # Add any remaining extra columns
-            for extra_col in self.extra_columns:
-                if extra_col['position'] >= current_pos:
-                    row_values.append(extra_col['value'])
-            
             latex += " & ".join(row_values) + " \\\\\n"
         
         # Close table
