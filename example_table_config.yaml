@@ -1,0 +1,82 @@
+# Example table_config.yaml file showing column formatting options
+
+# Column display name mappings
+display_names:
+  model: "Model"
+  accuracy: "Accuracy"
+  f1_score: "F1 Score"
+  precision: "Precision"
+  recall: "Recall"
+  loss: "Loss"
+  learning_rate: "Learning Rate"
+  epoch_time: "Epoch Time (s)"
+  memory_usage: "Memory (GB)"
+  percentage_improved: "Improvement (%)"
+
+# LaTeX model name mappings
+latex_model_names:
+  "bert-base": "BERT\\textsubscript{base}"
+  "bert-large": "BERT\\textsubscript{large}"
+  "gpt-3.5": "GPT-3.5"
+  "claude-3": "Claude-3"
+
+# Column-specific formatting (NEW FEATURE)
+column_formats:
+  # Standard decimal formatting
+  accuracy: ":.3f"           # 3 decimal places: 0.856 -> 0.856
+  f1_score: ":.3f"          # 3 decimal places: 0.8245 -> 0.825
+  precision: ":.2f"         # 2 decimal places: 0.8567 -> 0.86
+  recall: ":.2f"            # 2 decimal places
+  
+  # Scientific notation for very small numbers
+  loss: ":.2e"              # Scientific notation: 0.00034 -> 3.40e-04
+  learning_rate: ":.1e"     # Scientific notation: 0.001 -> 1.0e-03
+  
+  # Percentage formatting
+  percentage_improved: ":.1%"  # Percentage: 0.156 -> 15.6%
+  
+  # Integer formatting (no decimals)
+  epoch_time: ":.0f"        # No decimals: 45.67 -> 46
+  
+  # Custom decimal places for different metrics
+  memory_usage: ":.1f"      # 1 decimal place: 2.345 -> 2.3
+
+# Model ordering (lower numbers appear first)
+model_order:
+  "bert-base": 1
+  "bert-large": 2
+  "gpt-3.5": 3
+  "claude-3": 4
+
+# Models to completely ignore (won't appear in table)
+ignored_models:
+  - "test-model"
+  - "debug-model"
+
+# Models to ignore in calculations (min value detection, etc.)
+ignored_models_in_calculation:
+  - "baseline*"
+  - "*-experimental"
+
+# Extra columns to insert
+extra_columns:
+  - position: 2
+    display_name: "Res"
+    value: "\\checkmark"
+
+# Model pattern rules
+model_patterns:
+  suffixes:
+    "_fine_tuned": "\\dagger"
+    "_ensemble": "\\ddagger"
+
+# Format specification examples:
+# :.3f     -> 3 decimal places (0.123456 -> 0.123)
+# :.2e     -> Scientific notation with 2 decimals (0.00123 -> 1.23e-03)
+# :.1%     -> Percentage with 1 decimal (0.156 -> 15.6%)
+# :.0f     -> No decimal places (45.67 -> 46)
+# :>8.2f   -> Right-align in 8 chars with 2 decimals
+# :<8.2f   -> Left-align in 8 chars with 2 decimals
+# :^8.2f   -> Center-align in 8 chars with 2 decimals
+# :+.2f    -> Always show sign (+1.23, -1.23)
+# : .2f    -> Space for positive numbers ( 1.23, -1.23)
