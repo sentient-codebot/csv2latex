@@ -38,6 +38,9 @@ class CSVToLatexConverter(QMainWindow):
         
         layout = QVBoxLayout()
         
+        # Configuration section
+        layout.addLayout(self._create_config_layout())
+        
         # Top buttons
         layout.addLayout(self._create_button_layout())
         
@@ -61,6 +64,24 @@ class CSVToLatexConverter(QMainWindow):
         layout.addWidget(self.latex_output)
         
         central_widget.setLayout(layout)
+    
+    def _create_config_layout(self):
+        """Create the configuration file selection layout"""
+        config_layout = QHBoxLayout()
+        
+        config_layout.addWidget(QLabel("Configuration:"))
+        
+        # Current config file label
+        self.config_file_label = QLabel(f"Current: {self.config.config_path}")
+        config_layout.addWidget(self.config_file_label)
+        
+        # Load config button
+        load_config_button = QPushButton("Load Config File")
+        load_config_button.clicked.connect(self._load_config_file)
+        config_layout.addWidget(load_config_button)
+        
+        config_layout.addStretch()
+        return config_layout
     
     def _create_button_layout(self):
         """Create the top button layout"""
@@ -274,8 +295,12 @@ class CSVToLatexConverter(QMainWindow):
                     column_format = self.config.get_column_format(col)
                     if column_format:
                         try:
-                            formatted_value = f"{value:{column_format}}"
-                        except (ValueError, TypeError):
+                            # Handle integer formats by converting float to int
+                            if column_format in ['d', 'b', 'o', 'x', 'X'] or column_format.endswith('d'):
+                                formatted_value = f"{int(value):{column_format}}"
+                            else:
+                                formatted_value = f"{value:{column_format}}"
+                        except (ValueError, TypeError) as e:
                             # Fallback to default formatting if custom format fails
                             formatted_value = f"{value:.{decimal_places}f}"
                     else:
@@ -306,3 +331,35 @@ class CSVToLatexConverter(QMainWindow):
         # Generate LaTeX
         latex = self.latex_formatter.generate_latex_table(df, selected_columns, decimal_places)
         self.latex_output.setPlainText(latex)
+    
+    def _load_config_file(self):
+        """Load a new configuration file"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Configuration File",
+            "",
+            "YAML Files (*.yaml *.yml);;All Files (*)"
+        )
+        
+        if file_path:
+            # Load the new configuration
+            self.config.load_config_file(file_path)
+            
+            # Update the formatter with the new config
+            self.latex_formatter = LatexFormatter(self.config)
+            
+            # Update the UI label
+            self.config_file_label.setText(f"Current: {self.config.config_path}")
+            
+            # If we have loaded data, update the column names and preview
+            if hasattr(self, 'combined_df'):
+                self._update_column_display_names()
+                self._update_preview()
+    
+    def _update_column_display_names(self):
+        """Update the display names in the column widget based on new config"""
+        for i in range(self.column_widget.rowCount()):
+            original_name = self.column_widget.item(i, 1).text()
+            display_name_widget = self.column_widget.cellWidget(i, 2)
+            if display_name_widget:
+                display_name_widget.setText(self.config.get_pretty_column_name(original_name))

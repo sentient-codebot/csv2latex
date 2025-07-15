@@ -112,7 +112,11 @@ class LatexFormatter:
             column_format = self.config.get_column_format(col)
             if column_format:
                 try:
-                    formatted_value = f"{value:{column_format}}"
+                    # Handle integer formats by converting float to int
+                    if column_format in ['d', 'b', 'o', 'x', 'X'] or column_format.endswith('d'):
+                        formatted_value = f"{int(value):{column_format}}"
+                    else:
+                        formatted_value = f"{value:{column_format}}"
                 except (ValueError, TypeError):
                     # Fallback to default formatting if custom format fails
                     formatted_value = f"{value:.{decimal_places}f}"

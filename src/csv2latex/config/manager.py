@@ -9,6 +9,12 @@ class ConfigManager:
         self.config_path = config_path
         self._config = self._load_config()
     
+    def load_config_file(self, new_config_path):
+        """Load a new configuration file and update the current config"""
+        self.config_path = new_config_path
+        self._config = self._load_config()
+        logging.info(f"Loaded new configuration file: {new_config_path}")
+    
     def _load_config(self):
         """Load configuration from YAML file"""
         try:
