@@ -2,7 +2,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from .converters import CSVToLatexConverter
+from .main_window import CSVToLatexConverter
 
 
 def cli():
