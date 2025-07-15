@@ -1,4 +1,5 @@
 from ..utils.data_processing import DataProcessor
+import pandas as pd
 
 
 class LatexFormatter:
@@ -31,16 +32,17 @@ class LatexFormatter:
         """Calculate minimum values for numeric columns that have underline enabled"""
         min_values = {}
         
-        # Filter dataframe for minimum calculation
+        # Filter dataframe for minimum calculation using generalized filtering
         df_for_mins = df.copy()
-        if 'model' in df.columns:
-            # Filter out ignored models and pattern matches
-            df_for_mins = df_for_mins[
-                ~df_for_mins['model'].isin(self.config.ignored_models) & 
-                ~df_for_mins['model'].apply(
-                    lambda x: DataProcessor.matches_ignored_pattern(x, self.config.ignored_in_calculation)
-                )
-            ]
+        mask = pd.Series(True, index=df_for_mins.index)
+        
+        # Apply generalized filtering for calculations
+        for col in df_for_mins.columns:
+            for idx, value in df_for_mins[col].items():
+                if self.config.should_exclude_from_calculations(col, value):
+                    mask.iloc[idx] = False
+        
+        df_for_mins = df_for_mins[mask]
         
         for col in cols[1:]:  # Skip first column
             if df_for_mins[col].dtype in ['float64', 'int64']:
@@ -115,6 +117,13 @@ class LatexFormatter:
     
     def _format_cell_value(self, value, col, current_model, min_values, decimal_places, is_first_column, column_underline_override):
         """Format individual cell value with appropriate LaTeX formatting"""
+        
+        # First, check if there's a value replacement for this column and value
+        replacement = self.config.get_value_replacement(col, value)
+        if replacement != str(value):
+            # Value replacement found - return it directly
+            return replacement
+        
         if is_first_column:  # First column - check if it has custom formatting
             # If first column has a custom format, use it instead of treating as model name
             column_format = self.config.get_column_format(col)
@@ -133,10 +142,10 @@ class LatexFormatter:
                     
                     return f"${formatted_value}$"
                 except (ValueError, TypeError):
-                    pass  # Fall back to model name logic
+                    pass  # Fall back to default string representation
             
-            # Default model name logic for first column
-            return self.config.latex_model_names.get(str(value), str(value))
+            # Default fallback for first column (no replacement, no custom format)
+            return str(value)
         elif isinstance(value, (int, float)):
             # Check if there's a custom format for this column
             column_format = self.config.get_column_format(col)
@@ -153,12 +162,16 @@ class LatexFormatter:
             else:
                 formatted_value = f"{value:.{decimal_places}f}"
             
-            # Check if current model name matches any patterns
+            # Check if current value matches any patterns using generalized pattern formatting
             prefix = ""
-            for suffix, pattern_prefix in self.config.model_patterns['suffixes'].items():
-                if current_model.endswith(suffix):
-                    prefix = pattern_prefix
-                    break
+            current_value = str(value)  # Use the current cell value instead of model name
+            column_patterns = self.config.get_column_patterns(col)
+            
+            if 'suffixes' in column_patterns:
+                for suffix, pattern_prefix in column_patterns['suffixes'].items():
+                    if current_value.endswith(suffix):
+                        prefix = pattern_prefix
+                        break
             
             # Check if this specific column should have underline
             should_underline = self._should_underline_column(col, column_underline_override)

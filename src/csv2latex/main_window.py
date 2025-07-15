@@ -218,13 +218,13 @@ class CSVToLatexConverter(QMainWindow):
         dfs = [pd.read_csv(f) for f in file_names]
         self.combined_df = pd.concat(dfs, axis=0, ignore_index=True)
         
-        # Apply initial data processing
-        self.combined_df = self.data_processor.filter_ignored_models(
-            self.combined_df, self.config.ignored_models)
-        self.combined_df = self.data_processor.sort_by_model_order(
-            self.combined_df, self.config.get_model_order)
+        # Apply initial data processing using generalized methods
+        self.combined_df = self.data_processor.filter_excluded_values(
+            self.combined_df, self.config)
+        self.combined_df = self.data_processor.sort_by_custom_order(
+            self.combined_df, self.config)
         
-        logging.info(f"Filtered out ignored models: {self.config.ignored_models}")
+        logging.info(f"Applied generalized filtering and sorting")
         
         self.df_columns = self.combined_df.columns.tolist()
         self._setup_column_widget()

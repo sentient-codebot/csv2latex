@@ -1,6 +1,6 @@
-# Example table_config.yaml file showing column formatting options
+# Example table_config.yaml file showing both legacy and generalized configuration options
 
-# Column display name mappings
+# Column display name mappings (universal)
 display_names:
   model: "Model"
   accuracy: "Accuracy"
@@ -12,15 +12,13 @@ display_names:
   epoch_time: "Epoch Time (s)"
   memory_usage: "Memory (GB)"
   percentage_improved: "Improvement (%)"
+  # For generalized usage (any column type)
+  year: "Year"
+  month: "Month"
+  cluster: "Cluster"
+  category: "Category"
 
-# LaTeX model name mappings
-latex_model_names:
-  "bert-base": "BERT\\textsubscript{base}"
-  "bert-large": "BERT\\textsubscript{large}"
-  "gpt-3.5": "GPT-3.5"
-  "claude-3": "Claude-3"
-
-# Column-specific formatting (NEW FEATURE)
+# Column-specific formatting (universal)
 column_formats:
   # Standard decimal formatting
   accuracy: ".3f"           # 3 decimal places: 0.856 -> 0.856
@@ -37,43 +35,14 @@ column_formats:
   
   # Integer formatting (no decimals)
   epoch_time: ".0f"        # No decimals: 45.67 -> 46
+  year: "d"                # Integer format: 2022.0 -> 2022
+  month: "d"               # Integer format: 6.0 -> 6
+  cluster: "d"             # Integer format: 3.0 -> 3
   
   # Custom decimal places for different metrics
   memory_usage: ".1f"      # 1 decimal place: 2.345 -> 2.3
 
-# Model ordering (lower numbers appear first)
-model_order:
-  "bert-base": 1
-  "bert-large": 2
-  "gpt-3.5": 3
-  "claude-3": 4
-
-# Models to completely ignore (won't appear in table)
-ignored_models:
-  - "test-model"
-  - "debug-model"
-
-# Models to ignore in calculations (min value detection, etc.)
-ignored_models_in_calculation:
-  - "baseline*"
-  - "*-experimental"
-
-# Extra columns to insert
-extra_columns:
-  - position: 2
-    display_name: "Res"
-    value: "\\checkmark"
-
-# Model pattern rules
-model_patterns:
-  suffixes:
-    "_fine_tuned": "\\dagger"
-    "_ensemble": "\\ddagger"
-
-# Global formatting options (legacy - use column_underline for per-column control)
-underline_min_values: true    # Default setting for underlining minimum values
-
-# Per-column underline settings (NEW FEATURE)
+# Per-column underline settings (universal)
 column_underline:
   accuracy: true              # Underline minimum accuracy values
   f1_score: true              # Underline minimum F1 score values
@@ -81,6 +50,123 @@ column_underline:
   recall: false               # Don't underline minimum recall values
   loss: true                  # Underline minimum loss values (usually best when lowest)
   learning_rate: false        # Don't underline minimum learning rate values
+  year: false                 # Don't underline minimum year values
+  month: false                # Don't underline minimum month values
+  cluster: false              # Don't underline minimum cluster values
+
+# Extra columns to insert (universal)
+extra_columns:
+  - position: 2
+    display_name: "Res"
+    value: "\\checkmark"
+
+# ============================================================================
+# GENERALIZED CONFIGURATION (NEW) - Works with any column data
+# ============================================================================
+
+# Generalized row sorting (replaces model_order)
+row_sorting:
+  columns: ["year", "month", "cluster"]  # Sort by these columns in order
+  sort_orders:
+    year:
+      "2022": 1
+      "2023": 2
+      "2024": 3
+    month:
+      "0": 1     # January (0-indexed)
+      "1": 2     # February
+      "6": 3     # July
+      "11": 4    # December
+    cluster:
+      "0": 1
+      "1": 2
+      "2": 3
+      "3": 4
+    # For model comparison tables
+    model:
+      "bert-base": 1
+      "bert-large": 2
+      "gpt-3.5": 3
+      "claude-3": 4
+
+# Generalized value replacements (replaces latex_model_names)
+value_replacements:
+  year:
+    "2022": "Year 1"
+    "2023": "Year 2"
+    "2024": "Year 3"
+  month:
+    "0": "Jan"
+    "1": "Feb"
+    "6": "Jul"
+    "11": "Dec"
+  category:
+    "A": "Category A"
+    "B": "Category B"
+  # For model comparison tables
+  model:
+    "bert-base": "BERT\\textsubscript{base}"
+    "bert-large": "BERT\\textsubscript{large}"
+    "gpt-3.5": "GPT-3.5"
+    "claude-3": "Claude-3"
+
+# Generalized row filtering (replaces ignored_models)
+row_filtering:
+  exclude_values:
+    cluster: ["4", "5"]     # Exclude clusters 4 and 5
+    category: ["test"]      # Exclude test category
+    model: ["test-model", "debug-model"]  # For model comparison tables
+  exclude_from_calculations:
+    cluster: ["4", "5"]     # Also exclude from min value calculations
+    model: ["baseline*", "*-experimental"]  # For model comparison tables
+
+# Generalized pattern formatting (replaces model_patterns)
+pattern_formatting:
+  # Apply patterns based on cell values ending with specific text
+  accuracy:
+    suffixes:
+      "92": "\\dagger"      # Values ending in 92 get dagger
+      "85": "\\ddagger"     # Values ending in 85 get double dagger
+  f1_score:
+    suffixes:
+      "80": "\\dagger"      # Values ending in 80 get dagger
+  model:
+    suffixes:
+      "_fine_tuned": "\\dagger"
+      "_ensemble": "\\ddagger"
+
+# ============================================================================
+# LEGACY CONFIGURATION (for backward compatibility)
+# ============================================================================
+
+# Legacy model-specific configurations (still supported)
+latex_model_names:
+  "bert-base": "BERT\\textsubscript{base}"
+  "bert-large": "BERT\\textsubscript{large}"
+  "gpt-3.5": "GPT-3.5"
+  "claude-3": "Claude-3"
+
+model_order:
+  "bert-base": 1
+  "bert-large": 2
+  "gpt-3.5": 3
+  "claude-3": 4
+
+ignored_models:
+  - "test-model"
+  - "debug-model"
+
+ignored_models_in_calculation:
+  - "baseline*"
+  - "*-experimental"
+
+model_patterns:
+  suffixes:
+    "_fine_tuned": "\\dagger"
+    "_ensemble": "\\ddagger"
+
+# Global formatting options (legacy - use column_underline for per-column control)
+underline_min_values: true    # Default setting for underlining minimum values
 
 # Format specification examples:
 # :.3f     -> 3 decimal places (0.123456 -> 0.123)

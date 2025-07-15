@@ -103,3 +103,115 @@ class ConfigManager:
             return self.column_underline[col_name]
         else:
             return self.underline_min_values
+    
+    # Generalized configuration properties
+    @property
+    def row_sorting(self):
+        """Get generalized row sorting configuration"""
+        return self._config.get('row_sorting', {})
+    
+    @property
+    def value_replacements(self):
+        """Get generalized value replacement configuration"""
+        return self._config.get('value_replacements', {})
+    
+    @property
+    def row_filtering(self):
+        """Get generalized row filtering configuration"""
+        return self._config.get('row_filtering', {})
+    
+    @property
+    def pattern_formatting(self):
+        """Get generalized pattern formatting configuration"""
+        return self._config.get('pattern_formatting', {})
+    
+    def get_sort_order(self, col_name, value):
+        """Get sort order for a value in a specific column"""
+        # Check new generalized sorting first
+        if self.row_sorting and 'sort_orders' in self.row_sorting:
+            sort_orders = self.row_sorting['sort_orders']
+            if col_name in sort_orders:
+                return sort_orders[col_name].get(str(value), 999999)
+        
+        # Fallback to legacy model_order for backward compatibility
+        if col_name == 'model':
+            return self.get_model_order(value)
+        
+        return 999999
+    
+    def get_value_replacement(self, col_name, value):
+        """Get value replacement for a specific column and value"""
+        # Check new generalized replacements first
+        if col_name in self.value_replacements:
+            replacements = self.value_replacements[col_name]
+            
+            # Try multiple string representations for numeric values
+            candidates = [str(value)]
+            if isinstance(value, (int, float)):
+                # Add integer representation for float values like 2022.0 -> "2022"
+                if isinstance(value, float) and value.is_integer():
+                    candidates.append(str(int(value)))
+                # Add float representation for int values like 2022 -> "2022.0"
+                elif isinstance(value, int):
+                    candidates.append(str(float(value)))
+            
+            # Try each candidate until we find a match
+            for candidate in candidates:
+                if candidate in replacements:
+                    return replacements[candidate]
+            
+            # No replacement found, return original value as string
+            return str(value)
+        
+        # Fallback to legacy latex_model_names for backward compatibility
+        if col_name == 'model':
+            return self.latex_model_names.get(str(value), str(value))
+        
+        return str(value)
+    
+    def get_column_patterns(self, col_name):
+        """Get pattern formatting rules for a specific column"""
+        # Check new generalized patterns first
+        if col_name in self.pattern_formatting:
+            return self.pattern_formatting[col_name]
+        
+        # Fallback to legacy model_patterns for backward compatibility
+        if col_name == 'model':
+            return self.model_patterns
+        
+        return {'suffixes': {}}
+    
+    def should_exclude_value(self, col_name, value):
+        """Check if a value should be excluded from display"""
+        # Check new generalized filtering first
+        if self.row_filtering and 'exclude_values' in self.row_filtering:
+            exclude_values = self.row_filtering['exclude_values']
+            if col_name in exclude_values:
+                excluded = exclude_values[col_name]
+                return any(self._matches_pattern(str(value), pattern) for pattern in excluded)
+        
+        # Fallback to legacy ignored_models for backward compatibility
+        if col_name == 'model':
+            return str(value) in self.ignored_models
+        
+        return False
+    
+    def should_exclude_from_calculations(self, col_name, value):
+        """Check if a value should be excluded from calculations"""
+        # Check new generalized filtering first
+        if self.row_filtering and 'exclude_from_calculations' in self.row_filtering:
+            exclude_from_calc = self.row_filtering['exclude_from_calculations']
+            if col_name in exclude_from_calc:
+                excluded = exclude_from_calc[col_name]
+                return any(self._matches_pattern(str(value), pattern) for pattern in excluded)
+        
+        # Fallback to legacy ignored_models_in_calculation for backward compatibility
+        if col_name == 'model':
+            return str(value) in self.ignored_in_calculation
+        
+        return False
+    
+    def _matches_pattern(self, value, pattern):
+        """Check if value matches a pattern (supports wildcards)"""
+        import fnmatch
+        return fnmatch.fnmatch(value, pattern)
