@@ -1,0 +1,114 @@
+# Comprehensive test configuration demonstrating all generalized features
+# This config tests the complete pipeline from CSV to LaTeX conversion
+
+# Column display names
+display_names:
+  year: "Year"
+  month: "Month"
+  cluster: "Cluster"
+  generative: "Generative Score"
+  scaled: "Scaled Score"
+
+# Column-specific formatting
+column_formats:
+  year: "d"                # Integer format: 2022.0 -> 2022
+  month: "d"               # Integer format: 0.0 -> 0
+  cluster: "d"             # Integer format: 3.0 -> 3
+  generative: ".4f"        # 4 decimal places: 0.0092 -> 0.0092
+  scaled: ".4f"            # 4 decimal places: 0.0180 -> 0.0180
+
+# Per-column underline settings for minimum values
+column_underline:
+  year: false              # Don't underline minimum year
+  month: false             # Don't underline minimum month
+  cluster: true            # Underline minimum cluster values
+  generative: true         # Underline minimum generative scores
+  scaled: true             # Underline minimum scaled scores
+
+# ============================================================================
+# GENERALIZED CONFIGURATION - Works with any column data
+# ============================================================================
+
+# Generalized row sorting (replaces model_order)
+row_sorting:
+  columns: ["year", "month", "cluster"]  # Sort by these columns in order
+  sort_orders:
+    year:
+      "2022": 1          # Year 2022 comes first
+      "2023": 2          # Year 2023 comes second
+      "2024": 3          # Year 2024 comes third
+    month:
+      "0": 1             # January (0-indexed) comes first
+      "6": 2             # July (0-indexed) comes second
+    cluster:
+      "0": 1             # Cluster 0 comes first
+      "1": 2             # Cluster 1 comes second
+      "2": 3             # Cluster 2 comes third
+      "3": 4             # Cluster 3 comes fourth
+
+# Generalized value replacements (replaces latex_model_names)
+value_replacements:
+  year:
+    "2022": "Year 1"     # Replace 2022 with "Year 1"
+    "2023": "Year 2"     # Replace 2023 with "Year 2"
+    "2024": "Year 3"     # Replace 2024 with "Year 3"
+  month:
+    "0": "Jan"           # Replace 0 with "Jan"
+    "1": "Feb"           # Replace 1 with "Feb"
+    "2": "Mar"           # Replace 2 with "Mar"
+    "3": "Apr"           # Replace 3 with "Apr"
+    "4": "May"           # Replace 4 with "May"
+    "5": "Jun"           # Replace 5 with "Jun"
+    "6": "Jul"           # Replace 6 with "Jul"
+    "7": "Aug"           # Replace 7 with "Aug"
+    "8": "Sep"           # Replace 8 with "Sep"
+    "9": "Oct"           # Replace 9 with "Oct"
+    "10": "Nov"          # Replace 10 with "Nov"
+    "11": "Dec"          # Replace 11 with "Dec"
+
+# Generalized row filtering (replaces ignored_models)
+row_filtering:
+  exclude_values:
+    cluster: ["4", "5"]  # Exclude clusters 4 and 5 from display
+  exclude_from_calculations:
+    cluster: ["4", "5"]  # Also exclude from min value calculations
+
+# Generalized pattern formatting (replaces model_patterns)
+pattern_formatting:
+  generative:
+    suffixes:
+      "92": "\\dagger"   # Values ending in "92" get dagger symbol
+      "34": "\\ddagger"  # Values ending in "34" get double dagger
+  scaled:
+    suffixes:
+      "80": "\\ast"      # Values ending in "80" get asterisk
+
+# Extra columns to insert (optional feature)
+extra_columns:
+  - position: 2
+    display_name: "Status"
+    value: "\\checkmark"
+
+# ============================================================================
+# LEGACY CONFIGURATION (for backward compatibility testing)
+# ============================================================================
+
+# Legacy model-specific configurations - these should still work
+model_order:
+  "test-model-1": 1
+  "test-model-2": 2
+
+latex_model_names:
+  "test-model-1": "Test Model 1"
+  "test-model-2": "Test Model 2"
+
+ignored_models:
+  - "debug-model"
+
+model_patterns:
+  suffixes:
+    "_v1": "\\dagger"
+    "_v2": "\\ddagger"
+
+# Global formatting options
+underline_min_values: true
