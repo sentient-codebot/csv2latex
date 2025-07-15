@@ -268,8 +268,18 @@ class CSVToLatexConverter(QMainWindow):
             
         for i, (_, row) in enumerate(df[cols].iterrows()):
             for j, value in enumerate(row):
-                if isinstance(value, float):
-                    formatted_value = f"{value:.{decimal_places}f}"
+                col = cols[j]
+                if isinstance(value, (int, float)):
+                    # Check if there's a custom format for this column
+                    column_format = self.config.get_column_format(col)
+                    if column_format:
+                        try:
+                            formatted_value = f"{value:{column_format}}"
+                        except (ValueError, TypeError):
+                            # Fallback to default formatting if custom format fails
+                            formatted_value = f"{value:.{decimal_places}f}"
+                    else:
+                        formatted_value = f"{value:.{decimal_places}f}"
                 else:
                     formatted_value = str(value)
                 item = QTableWidgetItem(formatted_value)

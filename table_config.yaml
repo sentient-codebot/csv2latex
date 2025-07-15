@@ -1,0 +1,17 @@
+# Test configuration for column formatting
+display_names:
+  accuracy: "Accuracy"
+  f1_score: "F1 Score"
+  precision: "Precision"
+  recall: "Recall"
+  loss: "Loss"
+  learning_rate: "Learning Rate"
+
+# Column-specific formatting
+column_formats:
+  accuracy: ".3f"      # 3 decimal places
+  f1_score: ".3f"      # 3 decimal places
+  precision: ".2f"     # 2 decimal places
+  recall: ".2f"        # 2 decimal places
+  loss: ".2e"          # Scientific notation
+  learning_rate: ".1e" # Scientific notation

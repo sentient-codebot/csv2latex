@@ -53,6 +53,11 @@ class ConfigManager:
         """Get model pattern rules"""
         return self._config.get('model_patterns', {'suffixes': {}})
     
+    @property
+    def column_formats(self):
+        """Get column format specifications"""
+        return self._config.get('column_formats', {})
+    
     def get_model_order(self, model_name):
         """Get order value for model, with high default for unspecified models"""
         return self.model_order.get(str(model_name), 999999)
@@ -70,3 +75,7 @@ class ConfigManager:
         
         words = col_name.split('_')
         return ' '.join(word.capitalize() for word in words)
+    
+    def get_column_format(self, col_name):
+        """Get format specification for a column"""
+        return self.column_formats.get(col_name, None)

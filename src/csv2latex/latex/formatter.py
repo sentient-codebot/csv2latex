@@ -107,8 +107,17 @@ class LatexFormatter:
         """Format individual cell value with appropriate LaTeX formatting"""
         if is_first_column:  # First column (model names)
             return self.config.latex_model_names.get(str(value), str(value))
-        elif isinstance(value, float):
-            formatted_value = f"{value:.{decimal_places}f}"
+        elif isinstance(value, (int, float)):
+            # Check if there's a custom format for this column
+            column_format = self.config.get_column_format(col)
+            if column_format:
+                try:
+                    formatted_value = f"{value:{column_format}}"
+                except (ValueError, TypeError):
+                    # Fallback to default formatting if custom format fails
+                    formatted_value = f"{value:.{decimal_places}f}"
+            else:
+                formatted_value = f"{value:.{decimal_places}f}"
             
             # Check if current model name matches any patterns
             prefix = ""

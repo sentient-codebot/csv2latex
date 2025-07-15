@@ -23,23 +23,23 @@ latex_model_names:
 # Column-specific formatting (NEW FEATURE)
 column_formats:
   # Standard decimal formatting
-  accuracy: ":.3f"           # 3 decimal places: 0.856 -> 0.856
-  f1_score: ":.3f"          # 3 decimal places: 0.8245 -> 0.825
-  precision: ":.2f"         # 2 decimal places: 0.8567 -> 0.86
-  recall: ":.2f"            # 2 decimal places
+  accuracy: ".3f"           # 3 decimal places: 0.856 -> 0.856
+  f1_score: ".3f"          # 3 decimal places: 0.8245 -> 0.825
+  precision: ".2f"         # 2 decimal places: 0.8567 -> 0.86
+  recall: ".2f"            # 2 decimal places
   
   # Scientific notation for very small numbers
-  loss: ":.2e"              # Scientific notation: 0.00034 -> 3.40e-04
-  learning_rate: ":.1e"     # Scientific notation: 0.001 -> 1.0e-03
+  loss: ".2e"              # Scientific notation: 0.00034 -> 3.40e-04
+  learning_rate: ".1e"     # Scientific notation: 0.001 -> 1.0e-03
   
   # Percentage formatting
-  percentage_improved: ":.1%"  # Percentage: 0.156 -> 15.6%
+  percentage_improved: ".1%"  # Percentage: 0.156 -> 15.6%
   
   # Integer formatting (no decimals)
-  epoch_time: ":.0f"        # No decimals: 45.67 -> 46
+  epoch_time: ".0f"        # No decimals: 45.67 -> 46
   
   # Custom decimal places for different metrics
-  memory_usage: ":.1f"      # 1 decimal place: 2.345 -> 2.3
+  memory_usage: ".1f"      # 1 decimal place: 2.345 -> 2.3
 
 # Model ordering (lower numbers appear first)
 model_order:
