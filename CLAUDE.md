@@ -127,3 +127,57 @@ column_formats:
 - **Configuration-driven** behavior through YAML files
 - **Pattern matching** for model-specific formatting rules
 - **Modular architecture** with clear separation of concerns
+
+## Testing Methodology
+
+### Test Infrastructure
+
+The project uses a comprehensive testing approach with dedicated test files:
+
+- **`test_data.csv`** - Sample CSV data for testing all features
+- **`test_config.yaml`** - Configuration file with various settings to test config functionality
+- **`test_pipeline.py`** - Complete pipeline test that validates end-to-end functionality
+
+### Testing Process
+
+**IMPORTANT: Always follow this testing methodology when making changes:**
+
+1. **Functionality-Specific Partial Tests:**
+   - After implementing a feature, write focused tests that validate the specific functionality
+   - Use small, targeted test cases to verify individual components work correctly
+   - Example: Test that table style switching works by creating sample data and verifying LaTeX output contains correct rules (`\hline` vs `\toprule`, `\midrule`, `\bottomrule`)
+
+2. **Complete Pipeline Test:**
+   - **ALWAYS** run `test_pipeline.py` after making changes
+   - This validates the entire application workflow from CSV loading to LaTeX generation
+   - Ensures all components work together and no regressions were introduced
+   - Tests multiple scenarios including different configurations and edge cases
+
+### Test Execution Commands
+
+```bash
+# Run the complete pipeline test
+uv run python test_pipeline.py
+
+# Run specific functionality tests (create as needed)
+uv run python -c "your_test_code_here"
+```
+
+### Test Coverage Areas
+
+The pipeline test validates:
+- CSV loading and data processing
+- Configuration file loading and parsing
+- Filtering and sorting functionality
+- Column customization and formatting
+- LaTeX generation with various styles
+- Min value highlighting and underline features
+- Pattern matching and value replacements
+- Error handling and edge cases
+
+### When to Add New Tests
+
+- **New features**: Create focused tests for the specific functionality, then ensure pipeline test covers the integration
+- **Bug fixes**: Add regression tests to prevent the same issue from recurring
+- **Configuration changes**: Update `test_config.yaml` to include new configuration options
+- **Data processing changes**: Update `test_data.csv` if new data scenarios are needed
