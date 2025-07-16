@@ -3,7 +3,7 @@ import pandas as pd
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (QMainWindow, QPushButton, QVBoxLayout, 
                            QHBoxLayout, QWidget, QFileDialog, QTableWidget, 
-                           QTableWidgetItem, QLabel, QLineEdit, QCheckBox, QTextEdit)
+                           QTableWidgetItem, QLabel, QLineEdit, QCheckBox, QTextEdit, QComboBox)
 from PyQt6.QtCore import Qt
 
 from .dialogs import SortDialog, FilterDialog
@@ -137,6 +137,21 @@ class CSVToLatexConverter(QMainWindow):
         self.decimal_places_input = QLineEdit("4")
         format_layout.addWidget(self.decimal_places_input)
         
+        # Table style selector
+        format_layout.addWidget(QLabel("Table Style:"))
+        self.table_style_combo = QComboBox()
+        self.table_style_combo.addItem("hline", "hline")
+        self.table_style_combo.addItem("booktabs", "booktabs")
+        
+        # Set current selection based on config
+        current_style = self.config.table_style
+        index = self.table_style_combo.findData(current_style)
+        if index >= 0:
+            self.table_style_combo.setCurrentIndex(index)
+        
+        self.table_style_combo.currentTextChanged.connect(self._on_table_style_changed)
+        format_layout.addWidget(self.table_style_combo)
+        
         format_layout.addWidget(QLabel("  (Underline settings are per-column)"))  # Info text
         
         format_layout.addStretch()
@@ -199,6 +214,19 @@ class CSVToLatexConverter(QMainWindow):
     
     def _on_column_underline_changed(self):
         """Handle per-column underline checkbox changes"""
+        # Regenerate LaTeX if we have data
+        if hasattr(self, 'combined_df'):
+            self._convert_to_latex()
+    
+    def _on_table_style_changed(self):
+        """Handle table style selection changes"""
+        # Update the config with the new table style
+        selected_style = self.table_style_combo.currentData()
+        self.config._config['table_style'] = selected_style
+        
+        # Update the formatter with the new config
+        self.latex_formatter = LatexFormatter(self.config)
+        
         # Regenerate LaTeX if we have data
         if hasattr(self, 'combined_df'):
             self._convert_to_latex()
@@ -406,3 +434,9 @@ class CSVToLatexConverter(QMainWindow):
             underline_widget = self.column_widget.cellWidget(i, 3)
             if underline_widget:
                 underline_widget.setChecked(self.config.get_column_underline(original_name))
+        
+        # Update table style combo box
+        current_style = self.config.table_style
+        index = self.table_style_combo.findData(current_style)
+        if index >= 0:
+            self.table_style_combo.setCurrentIndex(index)
