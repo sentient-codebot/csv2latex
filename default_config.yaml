@@ -1,0 +1,63 @@
+# Default configuration for CSV to LaTeX converter
+# This file contains global default settings that are used when no specific configuration is loaded
+# or when specific settings are not found in the loaded configuration file
+
+# ============================================================================
+# GLOBAL DEFAULT SETTINGS
+# ============================================================================
+
+# Default decimal places for numeric values
+default_decimal_places: 3
+
+# Default table style
+table_style: "hline"  # Options: "hline" or "booktabs"
+
+# Default underline setting for minimum values (global fallback)
+underline_min_values: false
+
+# Default per-column underline settings (all columns default to false)
+column_underline:
+  default: false  # This serves as the fallback for any column not explicitly configured
+
+# Default column formats (empty by default, uses decimal places)
+column_formats: {}
+
+# Default display names (empty by default, uses prettified column names)
+display_names: {}
+
+# ============================================================================
+# LEGACY COMPATIBILITY DEFAULTS
+# ============================================================================
+
+# Default model-specific settings (for backward compatibility)
+model_order: {}
+latex_model_names: {}
+ignored_models: []
+ignored_models_in_calculation: []
+
+# Default model patterns (for backward compatibility)
+model_patterns:
+  suffixes: {}
+
+# ============================================================================
+# GENERALIZED CONFIGURATION DEFAULTS
+# ============================================================================
+
+# Default row sorting configuration
+row_sorting:
+  columns: []
+  sort_orders: {}
+
+# Default value replacements
+value_replacements: {}
+
+# Default row filtering
+row_filtering:
+  exclude_values: {}
+  exclude_from_calculations: {}
+
+# Default pattern formatting
+pattern_formatting: {}
+
+# Default extra columns
+extra_columns: []
