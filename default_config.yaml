@@ -10,7 +10,7 @@
 default_decimal_places: 3
 
 # Default table style
-table_style: "hline"  # Options: "hline" or "booktabs"
+table_style: "booktabs"  # Options: "hline" or "booktabs"
 
 # Default underline setting for minimum values (global fallback)
 underline_min_values: false
